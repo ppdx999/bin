@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# arg empty check
+test -n "$1" || exit 1
+
+java --module-path ~/javafx-sdk-16/lib --add-modules javafx.controls "$1"
