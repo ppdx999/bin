@@ -3,4 +3,4 @@
 # arg empty check
 test -n "$1" || exit 1
 
-javac --module-path ~/javafx-sdk-16/lib --add-modules javafx.controls "$1"
+javac --module-path ~/javafx-sdk-16/lib --add-modules javafx.controls,javafx.fxml "$1"
