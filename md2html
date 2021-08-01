@@ -24,7 +24,7 @@ _main(){
 	for arg in "$@"
 	do
 		if [ -n "$arg" ]; then
-			pandoc -f markdown -t html --template=template -o "${arg%.*}.html" "$arg"
+			pandoc -f markdown+yaml_metadata_block -t html --template=template -o "${arg%.*}.html" "$arg"
 			sed -i -E '/<pre><code class="[^"]*">/N;s/(.*)\n(.*)/\1\2/g' "${arg%.*}.html"
 		fi
 	done
