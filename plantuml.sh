@@ -19,13 +19,34 @@ _main(){
 
 	[ ! -f ~/lib/plantuml/plantuml.jar ] && error_exit "plantuml.jar cannot be found. Please add it to \"~/lib/plantuml/plantuml.jar\""
 
+	while getopts s OPT
+	do
+		case $OPT in
+			s) target_type="svg" ;;
+			p) target_type="png" ;;
+			\?) error_exit "Error: Unknown option"
+		esac
+	done
+	shift $((OPTIND - 1))
+
 	for arg in "$@"
 	do
 		if [ ! -f "$arg" ]; then
 			echo "$arg"" could not be found" 1>&2
 			continue
 		fi
-		java -jar ~/lib/plantuml/plantuml.jar -charset UTF-8 "$arg"
+		
+		case $target_type in
+			"svg")
+				java -jar ~/lib/plantuml/plantuml.jar -svg -charset UTF-8 "$arg"
+				;;
+			"png")
+				java -jar ~/lib/plantuml/plantuml.jar -charset UTF-8 "$arg"
+				;;
+			*)
+				java -jar ~/lib/plantuml/plantuml.jar -svg -charset UTF-8 "$arg"
+				;;
+		esac
 	done
 
 }
