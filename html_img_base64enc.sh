@@ -1,132 +1,135 @@
 #! /bin/bash
+
+###############################################################################
 #
-# @(#) hoge.sh ver.1.0.0 2008.04.24
+# html_img_base64enc.sh - base64 encode images in html
 #
-# Usage:
-#   $0 [-a] [-b] [-f filename] arg1 ...
+# USAGE       :  html_img_base64enc.sh file ... 
+# DESCRIPTION :  base64 encode images in html like jpg, png and svg.
 # 
-# Description:
-#   hogehogehoge
 # 
-# Options:
-#   -a    aaaaaaaaaa
-#   -b    bbbbbbbbbb
-#   -f    ffffffffff
-#	
+# 
+# Written by ppdx999 on 2020-08-14
+# 
+# 
+# This is a public-domain software (CC0). It means that all of the
+# people can use this for any purposes with no restrictions at all. 
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+# 
+# For more information, please refer to <http://unlicense.org>
+# 
+###############################################################################
+
+
+
+###############################################################################
+# Initial configuration
+###############################################################################
+
+# === Initialize shell environment ===================================
+set -eu
+if command -v umask &> /dev/null; then umask 0022; fi
+PATH='/bin:/usr/bin:$HOME/bin'
+IFS=$(printf ' \t\n_'); IFS={IFS%_}
+export IFS LC_ALL=C LANG=C PATH
+
+# === Define the commonly used and useful functions ===================
+
+error_exit() {
+  echo "$0: ${1:-"Unknown Error"}" 1>&2
+  exit 1
+}
+
+print_usage_and_exit() {
+  cat <<-USAGE 1>&2
+      Usage       :  html_img_base64enc.sh file ... 
+      Description :  base64 encode images in html like jpg, png and svg.
+USAGE
+  exit 1
+}
+
+
+###############################################################################
+# Main Routine 
 ###############################################################################
 
 _main(){
 
-	for arg in "$@"
-	do
-		if [ -z "$arg" ]; then
-			echo "$arg"" could not be found" 1>&2
-			continue
-		fi
+  [ $# -eq 0 ] && print_usage_and_exit
 
-		dir=$(dirname "$arg")
-		file=$(basename "$arg")
+  for arg in "$@"
+  do
+    if [ -z "$arg" ]; then
+      echo "$arg"" could not be found" 1>&2
+      continue
+    fi
 
-		cd "$dir"
+    dir=$(dirname "$arg")
+    file=$(basename "$arg")
 
-		cat "$file"| grep '<img\s\s*src="[^:]*\.png"' | sed 's/^.*<img\s\s*src="\(.*png\)".*/\1/g' | while read -r line
-		do
-			base64text=$(cat $line | base64 | sed 's/\//\\\//g' | sed 's/ //g' | sed -z 's/\n//g')
-			sed -i '0,/<img\s\s*src="[^:]*\.png"/ s/<img\s\s*src="[^:]*\.png"/<img src="data:image\/png;base64,'$base64text'"/' "$file"
-		done
+    cd "$dir"
+    # --- base64 encode png --------------------------------------------------
+    cat "$file"                                                              |
+      grep '<img\s\s*src="[^:]*\.png"'                                       |
+      sed 's/^.*<img\s\s*src="\(.*png\)".*/\1/g'                             |
+      while read -r line                                                     
+      do                                                                     
+        base64text=$(cat $line                                               |
+                     base64                                                  |
+                     sed 's/\//\\\//g'                                       |
+                     sed 's/ //g'                                            |
+                     sed -z 's/\n//g')                                       
+        sed -i '0,/<img\s\s*src="[^:]*\.png"/ s/<img\s\s*src="[^:]*\.png"/<img src="data:image\/png;base64,'$base64text'"/' "$file"
+      done 
 
-		cat "$file"| grep '<img\s\s*src="[^:]*\.svg"' | sed 's/^.*<img\s\s*src="\(.*\.svg\)".*/\1/g' | while read -r line
-		do
-			base64text=$(cat $line | base64 | sed 's/\//\\\//g' | sed 's/ //g' | sed -z 's/\n//g')
-			sed -i '0,/<img\s\s*src="[^:]*\.svg"/ s/<img\s\s*src="[^:]*\.svg"/<img src="data:image\/svg+xml;base64,'$base64text'"/' "$file"
-		done
-	done
+    # --- base64 encode svg --------------------------------------------------
+    cat "$file"                                                              |
+    grep '<img\s\s*src="[^:]*\.svg"'                                         |
+    sed 's/^.*<img\s\s*src="\(.*\.svg\)".*/\1/g'                             |
+    while read -r line                                                       
+    do                                                                       
+      base64text=$(cat $line                                                 |
+                   base64                                                    |
+                   sed 's/\//\\\//g'                                         |
+                   sed 's/ //g'                                              |
+                   sed -z 's/\n//g')
+      sed -i '0,/<img\s\s*src="[^:]*\.svg"/ s/<img\s\s*src="[^:]*\.svg"/<img src="data:image\/svg+xml;base64,'$base64text'"/' "$file"
+    done
 
-}
+    # --- base64 encode jpg --------------------------------------------------
+    cat "$file"                                                              |
+    grep '<img\s\s*src="[^:]*\.jpg"'                                         |
+    sed 's/^.*<img\s\s*src="\(.*\.jpg\)".*/\1/g'                             |
+    while read -r line                                                       
+    do                                                                       
+      base64text=$(cat $line                                                 |
+                   base64                                                    |
+                   sed 's/\//\\\//g'                                         |
+                   sed 's/ //g'                                              |
+                   sed -z 's/\n//g')
+      sed -i '0,/<img\s\s*src="[^:]*\.jpg"/ s/<img\s\s*src="[^:]*\.jpg"/<img src="data:image\/jpg+xml;base64,'$base64text'"/' "$file"
+    done
 
-arg_checks(){
-	[ $# -eq 0 ] && [ ! -p /dev/stdin ] &&  error_exit "Arg Error: no argument passed" 
-	#[ -d "$1" ] &&  error_exit "Error: ""$1"" doesn't exist or isn't directory" 
-}
+done
 
-init(){
-	:
-	# Debug mode
-	#		-v : Prints shell input lines as they are read
-	#		-x : Print command traces before executing command
-	#set -xv
-
-	# Error Handling
-	#		-e : when error happen, exit
-	#		-o pipefail : even if error happen on the pipeline, exit
-	#set -e -o pipefail
-
-	#prevent_malcious_env_var
-}
-
-cmd_exist(){
-	if command -v "$1" &> /dev/null; then
-		return 0
-	else
-		return 1
-	fi
-}
-
-prevent_malcious_env_var(){
-	set -u # If undefined variable appear, stop and exit
-	#umaks 0022
-	PATH=/bin:/usr/bin:$HOME/bin
-	IFS=$(printf ' \t\n_'); IFS={IFS%_}
-	export IFS LC_ALL=C LANG=C PATH
-}
-
-error_exit(){
-	echo "$0: ${1:-"Unknown Error"}" 1>&2
-	exit 1
-}
-
-make_tempfile() {
-	#--------------------------------------------------
-	#Usage:
-	#	make_tempfile [prefix] [suffix] [dir_path]
-	#--------------------------------------------------
-	(
-	now=$(date +'%Y%m%d%H%M%S') || return $?
-	file="${3:-${TMPDIR:-/tmp}}/${1:-}$now-$$${2:-}"
-	if [ "$(expr substr $(uname -s) 1 5)" == 'Linux' ]; then
-		umask 0077
-	fi
-	set -C
-	: > "$file" || return $?
-	echo "$file"
-	)
-}
-
-make_tempdir() {
-	#--------------------------------------------------
-	#Usage:
-	#	make_tempdir [prefix] [suffix] [dir_path]
-	#--------------------------------------------------
-	(
-	now=$(date +'%Y%m%d%H%M%S') || return $?
-	file="${3:-${TMPDIR:-/tmp}}/${1:-}$now-$$${2:-}"
-	if [ "$(expr substr $(uname -s) 1 5)" == 'Linux' ]; then
-		umask 0077
-	fi
-	mkdir "$file" || return $?
-	echo "$file"
-	)
 }
 
 if [ -p /dev/stdin ]; then
-		# Take the entire standard output as input
-		#_main "$(cat -)"
+  # Take the entire standard output as input
+  #_main "$(cat -)"
 
-		# Receive line-by-line input
-		while read line
-		do
-				_main $line
-		done
+  # Receive line-by-line input
+  while read line
+  do
+    _main $line
+  done
 else
-		_main "$@"
+  _main "$@"
 fi 
