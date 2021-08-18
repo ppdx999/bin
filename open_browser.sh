@@ -91,10 +91,8 @@ _main(){
 
 		cd "$dir"
 		if [ "$(detectOS)" == 'Linux' ]; then
-      if cmd_exist firefox; then
-        firefox "$PWD"/"$file"
-			elif [ -n ${BROWSER:=} ]; then
-				$BROWSER "$PWD"/"$file"
+			if [ -n "${BROWSER:=}" ]; then
+				"$BROWSER" "$PWD"/"$file"
 			elif which xdg-open > /dev/null; then
 				xdg-open "$PWD"/"$file"
 			elif which gnome-open > /dev/null; then
