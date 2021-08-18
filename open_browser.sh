@@ -101,7 +101,7 @@ _main(){
 				error_exit "Could not detect the web browser to use."
 			fi
 		elif [ "$(detectOS)" == 'MinGw' ]; then
-			start chrome "$PWD"/"$file"
+			start "$PWD"/"$file"
 		fi
 	done
 
