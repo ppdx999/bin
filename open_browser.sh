@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 ###############################################################################
 #
@@ -32,10 +32,13 @@
 
 # === Initialize shell environment ===================================
 set -eu
-if command -v umask &> /dev/null; then umask 0022; fi
-PATH='/bin:/usr/bin:$HOME/bin'
+if command -v umask >/dev/null 2>&1; then umask 0022; fi
+export LC_ALL=C
+export PATH="$(command -p getconf PATH 2>/dev/null)${PATH+:}${PATH-}"
+case $PATH in :*) PATH=${PATH#?};; esac
+#export UNIX_STD=2003 # to make HP-UX conform to POSIX
 IFS=$(printf ' \t\n_'); IFS={IFS%_}
-export IFS LC_ALL=C LANG=C PATH
+export IFS
 
 # === Define the commonly used and useful functions ===================
 
@@ -77,7 +80,11 @@ cmd_exist() {
 
 _main(){
 
+  # === Print the usage when "--help" is put or no arugument passed ===========
   [ $# -eq 0 ] && print_usage_and_exit
+  case "$# ${1:-}" in
+    '1 -h'|'1 --help'|'1 --version') print_usage_and_exit;;
+  esac
 
 	for arg in "$@"
 	do
@@ -90,19 +97,22 @@ _main(){
 		file=$(basename "$arg")
 
 		cd "$dir"
-		if [ "$(detectOS)" == 'Linux' ]; then
-			if [ -n "${BROWSER:=}" ]; then
-				"$BROWSER" "$PWD"/"$file"
-			elif which xdg-open > /dev/null; then
-				xdg-open "$PWD"/"$file"
-			elif which gnome-open > /dev/null; then
-				gnome-open "$PWD"/"$file"
-			else
-				error_exit "Could not detect the web browser to use."
-			fi
-		elif [ "$(detectOS)" == 'MinGw' ]; then
-			start "$PWD"/"$file"
-		fi
+    case "$(detectOS)" in
+      'Linux' ) 
+          if [ -n "${BROWSER:=}" ]; then
+            "$BROWSER" "$PWD"/"$file"
+          elif which xdg-open > /dev/null; then
+            xdg-open "$PWD"/"$file"
+          elif which gnome-open > /dev/null; then
+            gnome-open "$PWD"/"$file"
+          else
+            error_exit "Could not detect the web browser to use."
+          fi
+        ;;
+      'MinGw' )
+        start "$PWD"/"$file"
+        ;;
+    esac
 	done
 
 }

@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 ###############################################################################
 #
@@ -6,8 +6,8 @@
 #
 # USAGE       :  plantuml.sh [OPTIONS ] file ... 
 #
-# OPTIONS     : -s,
-#                 Specify the format of the output file.
+# OPTIONS     : -t filetype
+#                 Specify the filetype of the output file.
 # 								For now, the available file formats are png and svg.
 # 
 # 
@@ -37,12 +37,23 @@
 
 # === Initialize shell environment ===================================
 set -eu
-if command -v umask &> /dev/null; then umask 0022; fi
-PATH='/bin:/usr/bin:$HOME/bin'
+if command -v umask >/dev/null 2>&1; then umask 0022; fi
+export LC_ALL=C
+export PATH="$(command -p getconf PATH 2>/dev/null)${PATH+:}${PATH-}"
+case $PATH in :*) PATH=${PATH#?};; esac
+#export UNIX_STD=2003 # to make HP-UX conform to POSIX
 IFS=$(printf ' \t\n_'); IFS={IFS%_}
-export IFS LC_ALL=C LANG=C PATH
+export IFS
 
 # === Define the commonly used and useful functions ===================
+
+which which >/dev/null 2>&1 || {
+  which() {
+    command -v "$1" 2>/dev/null |
+      awk '{if($0 !~ /^$/) print; ok=1;}
+         END{if(ok==0){print "which: not found" > "/dev/stderr"; exit 1}}'
+  }
+}
 
 error_exit() {
 	echo "$0: ${1:-"Unknown Error"}" 1>&2
@@ -53,19 +64,11 @@ print_usage_and_exit() {
 	cat <<-USAGE 1>&2
 		USAGE       :  plantuml.sh [OPTIONS ] file ... 
 
-		OPTIONS     : -s,
-                 Specify the format of the output file.
+		OPTIONS     : -t filetype,
+                 Specify the filetype of the output file.
                   For now, the available file formats are png and svg.
 	USAGE
   exit 1
-}
-
-cmd_exist() {
-	if command -v "$1" &> /dev/null; then
-		return 0
-	else
-		return 1
-	fi
 }
 
 detectOS() {
@@ -77,6 +80,57 @@ detectOS() {
    	*)          echo "UNKNOWN:$(uname -s)"
    esac
 }
+
+######################################################################
+# Parse Arguments
+######################################################################
+
+# === Print the usage when "--help" is put ===========================
+case "$# ${1:-}" in
+  '1 -h'|'1 --help'|'1 --version') print_usage_and_exit;;
+esac
+
+# === Get the options, arguments and pipeline-input ===============================
+# --- initialize option parameters -----------------------------------
+
+output_filetype='svg' # default outputfile type. Change it as you like.
+plantuml_path="~/lib/plantuml/plantuml.jar" # default path. Change it as you like
+
+# --- get them -------------------------------------------------------
+optmode=''
+while [ $# -gt 0 ]; do
+  case "$optmode" in
+    '') case "$1" in
+          --)       shift
+                    break
+                    ;;
+          -[hv]|--help|--version)
+                    print_usage_and_exit
+                    ;;
+          -[s]*)    ret=$(printf '%s\n' "${1#-}"                              |
+                          awk '{opt     = substr($0,1,1);                     #
+                                opt_str = (length($0)>1) ? substr($0,2) : ""; #
+                                printf("%s %s", opt, opt_str);              }')
+                    ret1=${ret%% *}
+                    ret2=${ret#* }
+                    case "$ret1$ret2" in
+                      s)  optmode='n'             ;;
+                      s*) output_filetype=$ret2;;
+                    esac
+                    ;;
+          -*)       print_usage_and_exit
+                    ;;
+          *)        break
+                    ;;
+        esac
+        ;;
+    n)  output_filetype=$1
+        optmode=''
+        ;;
+  esac
+  shift
+done
+
 ###############################################################################
 # Main Routine 
 ###############################################################################
@@ -84,27 +138,22 @@ _main() {
 
   [ $# -eq 0 ] && print_usage_and_exit 
 
-	if [ $(detectOS) == 'Linux' ]; then
-		plantuml "$@"
-		exit $?
-	fi
+  case $(detectOS) in
+    'Linux' )
+      which plantuml > /dev/null || error_exit "plantuml command can't be found"
+      plantuml "$@"
+      exit $?
+      ;;
+    'MinGw' | 'CYGWIN')
+      ;;
+    *)
+      error_exit "Error: This command works only in Linux or MinGw"
+      ;;
+  esac
 
-	if [ $(detectOS) == 'MinGw' ]; then
-		error_exit "Error: This command works only in Linux or MinGw"
-	fi
-
-	[ ! -f ~/lib/plantuml/plantuml.jar ] &&
-		error_exit "plantuml.jar cannot be found. Please add it to \"~/lib/plantuml/plantuml.jar\""
-
-	while getopts s:h OPT
-	do
-		case $OPT in
-			s) target_type=$OPTARG ;;
-			h) print_usage_and_exit ;;
-			\?) print_usage_and_exit ;;
-		esac
-	done
-	shift $((OPTIND - 1))
+  [ -z "${PLANTUML:-}" ]               &&
+  [ ! -f "$plantuml_path" ]            &&
+  error_exit "plantuml.jar cannot be found. Please add it to \""$plantuml_path"\""
 
 	for arg in "$@"
 	do
@@ -113,15 +162,15 @@ _main() {
 			continue
 		fi
 
-		case $target_type in
+		case $output_filetype in
 			"svg")
-				java -jar ~/lib/plantuml/plantuml.jar -svg -charset UTF-8 "$arg"
+				java -jar "$plantuml_path" -svg -charset UTF-8 "$arg"
 				;;
 			"png")
-				java -jar ~/lib/plantuml/plantuml.jar -charset UTF-8 "$arg"
+				java -jar "$plantuml_path" -charset UTF-8 "$arg"
 				;;
 			*)
-				java -jar ~/lib/plantuml/plantuml.jar -svg -charset UTF-8 "$arg"
+				java -jar "$plantuml_path" -charset UTF-8 "$arg"
 				;;
 		esac
 	done

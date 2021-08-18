@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 ###############################################################################
 #
@@ -35,10 +35,13 @@
 
 # === Initialize shell environment ===================================
 set -eu
-if command -v umask &> /dev/null; then umask 0022; fi
-PATH='/bin:/usr/bin:$HOME/bin'
+if command -v umask >/dev/null 2>&1; then umask 0022; fi
+export LC_ALL=C
+export PATH="$(command -p getconf PATH 2>/dev/null)${PATH+:}${PATH-}"
+case $PATH in :*) PATH=${PATH#?};; esac
+#export UNIX_STD=2003 # to make HP-UX conform to POSIX
 IFS=$(printf ' \t\n_'); IFS={IFS%_}
-export IFS LC_ALL=C LANG=C PATH
+export IFS
 
 # === Define the commonly used and useful functions ===================
 
@@ -55,14 +58,17 @@ USAGE
   exit 1
 }
 
+# === Print the usage when "--help" is put ===========================
+[ $# -eq 0 ] && print_usage_and_exit
+case "$# ${1:-}" in
+  '1 -h'|'1 --help'|'1 --version') print_usage_and_exit;;
+esac
 
 ###############################################################################
 # Main Routine 
 ###############################################################################
 
 _main(){
-
-  [ $# -eq 0 ] && print_usage_and_exit
 
   for arg in "$@"
   do
@@ -75,18 +81,19 @@ _main(){
     file=$(basename "$arg")
 
     cd "$dir"
+
     # --- base64 encode png --------------------------------------------------
     cat "$file"                                                              |
       grep '<img\s\s*src="[^:]*\.png"'                                       |
       sed 's/^.*<img\s\s*src="\(.*png\)".*/\1/g'                             |
       while read -r line                                                     
       do                                                                     
-        base64text=$(cat $line                                               |
+        base64text=$(cat "$line"                                             |
                      base64                                                  |
                      sed 's/\//\\\//g'                                       |
                      sed 's/ //g'                                            |
                      sed -z 's/\n//g')                                       
-        sed -i '0,/<img\s\s*src="[^:]*\.png"/ s/<img\s\s*src="[^:]*\.png"/<img src="data:image\/png;base64,'$base64text'"/' "$file"
+        sed -i '0,/<img\s\s*src="[^:]*\.png"/ s/<img\s\s*src="[^:]*\.png"/<img src="data:image\/png;base64,'"$base64text"'"/' "$file"
       done 
 
     # --- base64 encode svg --------------------------------------------------
@@ -95,12 +102,12 @@ _main(){
     sed 's/^.*<img\s\s*src="\(.*\.svg\)".*/\1/g'                             |
     while read -r line                                                       
     do                                                                       
-      base64text=$(cat $line                                                 |
+        base64text=$(cat "$line"                                             |
                    base64                                                    |
                    sed 's/\//\\\//g'                                         |
                    sed 's/ //g'                                              |
                    sed -z 's/\n//g')
-      sed -i '0,/<img\s\s*src="[^:]*\.svg"/ s/<img\s\s*src="[^:]*\.svg"/<img src="data:image\/svg+xml;base64,'$base64text'"/' "$file"
+      sed -i '0,/<img\s\s*src="[^:]*\.svg"/ s/<img\s\s*src="[^:]*\.svg"/<img src="data:image\/svg+xml;base64,'"$base64text"'"/' "$file"
     done
 
     # --- base64 encode jpg --------------------------------------------------
@@ -109,12 +116,12 @@ _main(){
     sed 's/^.*<img\s\s*src="\(.*\.jpg\)".*/\1/g'                             |
     while read -r line                                                       
     do                                                                       
-      base64text=$(cat $line                                                 |
+        base64text=$(cat "$line"                                             |
                    base64                                                    |
                    sed 's/\//\\\//g'                                         |
                    sed 's/ //g'                                              |
                    sed -z 's/\n//g')
-      sed -i '0,/<img\s\s*src="[^:]*\.jpg"/ s/<img\s\s*src="[^:]*\.jpg"/<img src="data:image\/jpg+xml;base64,'$base64text'"/' "$file"
+      sed -i '0,/<img\s\s*src="[^:]*\.jpg"/ s/<img\s\s*src="[^:]*\.jpg"/<img src="data:image\/jpg+xml;base64,'"$base64text"'"/' "$file"
     done
 
 done
