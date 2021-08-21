@@ -1139,6 +1139,9 @@ case "$(detectOS)" in
   'MinGw' | 'Sygwin' )
     start "$tmp"
     ;;
+  'Mac' )
+    open "$tmp"
+    ;;
 esac
 
 sleep 2
