@@ -51,9 +51,9 @@ error_exit() {
 
 print_usage_and_exit() {
   cat <<-USAGE_END 1>&2
-  Usage       : ${0##*/} [options] [XML_file]
-  Description :
-  Requirement :
+  Usage       : ${0##*/} FILE
+  DESCRIPTION :  convert markdown to html with github like css and
+                 open the converted file in a browser 
 USAGE_END
 exit 1
 }
