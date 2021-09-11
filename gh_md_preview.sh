@@ -77,6 +77,7 @@ detectOS() {
     Darwin*)    echo Mac;;
     CYGWIN*)    echo Cygwin;;
     MINGW*)     echo MinGw;;
+    MSYS*)      echo MSYS;;
     *)          echo "UNKNOWN:$(uname -s)"
   esac
 }
@@ -1115,7 +1116,7 @@ body .task-list-item input {
 <body>
 EOF
 
-pandoc -f markdown -t html $1
+pandoc -f markdown -t html "$1"
 
 cat <<-EOF
 </body>
@@ -1136,7 +1137,7 @@ case "$(detectOS)" in
         error_exit "Could not detect the web browser to use."
       fi
     ;;
-  'MinGw' | 'Sygwin' )
+  'MinGw' | 'Sygwin' | 'MSYS' )
     start "$tmp"
     ;;
   'Mac' )
