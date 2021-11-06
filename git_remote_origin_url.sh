@@ -76,6 +76,7 @@ which which >/dev/null 2>&1 || {
 
 case "$(git config --global user.name)" in "") git config --global user.name "ppdx999" ;; esac
 case "$(git config --global user.email)" in "") git config --global user.email "ppdx999@gmail.com" ;; esac
+git config --global core.editor vim
 
 rep_name=$(pwd | xargs basename)
 case "$(git config remote.origin.url)" in
