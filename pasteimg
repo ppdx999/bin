@@ -1,0 +1,41 @@
+#! /bin/sh
+
+
+# === Initialize shell environment ===================================
+set -eu
+if command -v umask >/dev/null 2>&1; then umask 0022; fi
+export LC_ALL=C
+export PATH="$(command -p getconf PATH 2>/dev/null)${PATH+:}${PATH-}"
+case $PATH in :*) PATH=${PATH#?};; esac
+#export UNIX_STD=2003 # to make HP-UX conform to POSIX
+IFS=$(printf ' \t\n_'); IFS={IFS%_}
+export IFS
+
+
+# === Utility Functions ==============================================
+
+error_exit() {
+	echo "$0: ${1:-"Unknown Error"}" 1>&2
+	exit 1
+}
+
+cmd_exist() {
+	if command -v "$1" > /dev/null 2>&1 ;then
+		return 0 # 0 is true
+	else
+		return 1 # 1 is false
+	fi
+}
+
+# === main Rouxcliptine ===================================================
+
+cmd_exist xclip || error_exit 'xclip command is no-exsist'
+
+IMAGE_NAME=`date "+%Y-%m-%d-%H-%M-%S".png`
+IMAGE_PATH="$IMAGE_NAME"
+
+if test -e "$IMAGE_PATH" ; then
+	error_exit 'File already exsited'
+fi
+
+xclip -selection clipboard -t image/png -o > "$IMAGE_PATH"
