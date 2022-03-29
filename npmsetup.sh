@@ -17,17 +17,26 @@ cat << EOF >> package.json
   "license": "ISC"
 }
 EOF
+
+# Babel Setting
 npm i -D @babel/core
 npm i -D @babel/preset-env
 npm i -D @babel/preset-typescript
-npm i -D @types/jest
 npm i -D babel-loader
-npm i -D html-webpack-plugin
-npm i -D jest
-npm i -D ts-loader
-npm i -D typescript
+
+# Webpack
 npm i -D webpack
 npm i -D webpack-cli webpack-dev-server
+npm i -D html-webpack-plugin
+npm i -D ts-loader
+
+# typescript
+npm i -D typescript
+
+# jest
+npm i -D @types/jest
+npm i -D jest
+npm i -D ts-jest
 
 cat <<EOF >> webpack.config.js
 const path = require("path");
@@ -98,4 +107,19 @@ cat << EOF >> src/index.html
     <div id="root"></div>
   </body>
 </html>
+EOF
+
+cat << EOF >> jest.config.js
+module.exports = {
+  "roots": [
+    "<rootDir>/src"
+  ],
+  "testMatch": [
+    "**/__tests__/**/*.+(ts|tsx|js)",
+    "**/?(*.)+(spec|test).+(ts|tsx|js)"
+  ],
+  "transform": {
+    "^.+\\.(ts|tsx)$": "ts-jest"
+  },
+}
 EOF
