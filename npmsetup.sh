@@ -84,6 +84,7 @@ EOF
    },
    "include": ["src"]
  }
+EOF
 
 mkdir src
 cat << EOF >> src/index.html
