@@ -8,8 +8,6 @@
 # ARGS        :  text
 #                  text you want to filter sha256sum.
 # 
-# 
-# 
 # Written by ppdx999 on 2020-08-14
 # 
 # 
@@ -45,8 +43,12 @@ print_usage_and_exit() {
 _main() {
   case "$(uname -s)" in
     Linux*)   
-      cat - | sha256sum | cut -c 1-64 | xsel -bi
-      ;;
+      case "$(cat /proc/version)" in
+       *arch* ) copy_to_clipboard="xclip -selection clipboard -i" ;;
+       *ubuntu* ) copy_to_clipboard="xsel -bi" ;;
+      esac
+       cat - | sha256sum | cut -c 1-64 | $copy_to_clipboard
+       ;;
     Darwin*)   
       cat - | sha256sum | cut -c 1-64 | pbcopy
       ;;
